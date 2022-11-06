@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - echo "build phase"
+      - ./buildScripts/runIntegrationTests.sh
+  post_build:
+    commands:
+      - aws cloudformation delete-stack --stack-name $SERVICE_STACK_NAME
+      - aws cloudformation delete-stack --stack-name $STACK_NAME
+reports:
+  integration-task1-report:
+    files:
+      - 'IntegrationTests/build/test-results/test/marketing-integration-task1-test/*.xml'
+    file-format: "JUNITXML"
+  integration-task2-report:
+    files:
+      - 'IntegrationTests/build/test-results/test/marketing-integration-task2-test/*.xml'
+    file-format: "JUNITXML"
+  integration-task3-report:
+    files:
+      - 'IntegrationTests/build/test-results/test/marketing-integration-task3-test/*.xml'
+    file-format: "JUNITXML"
+  integration-task4-report:
+    files:
+      - 'IntegrationTests/build/test-results/test/marketing-integration-task4-test/*.xml'
+    file-format: "JUNITXML"
