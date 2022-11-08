@@ -1,4 +1,4 @@
-package com.kenzie.marketing.application.repositories.model;
+package com.kenzie.marketing.application.controller.repositories.model;
 
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;

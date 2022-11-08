@@ -2,8 +2,8 @@ package com.kenzie.marketing.application.service;
 
 import com.kenzie.marketing.application.controller.model.CreateCustomerRequest;
 import com.kenzie.marketing.application.controller.model.CustomerResponse;
-import com.kenzie.marketing.application.repositories.CustomerRepository;
-import com.kenzie.marketing.application.repositories.model.CustomerRecord;
+import com.kenzie.marketing.application.controller.repositories.CustomerRepository;
+import com.kenzie.marketing.application.controller.repositories.model.CustomerRecord;
 
 import com.kenzie.marketing.referral.model.client.ReferralServiceClient;
 import org.junit.jupiter.api.Assertions;
@@ -207,5 +207,6 @@ public class CustomerServiceTest {
      *  ------------------------------------------------------------------------ **/
 
     // Write additional tests here
+
 
 }

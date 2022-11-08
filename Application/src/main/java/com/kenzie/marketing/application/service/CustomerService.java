@@ -3,24 +3,25 @@ package com.kenzie.marketing.application.service;
 import com.kenzie.marketing.application.controller.model.CreateCustomerRequest;
 import com.kenzie.marketing.application.controller.model.CustomerResponse;
 import com.kenzie.marketing.application.controller.model.LeaderboardUiEntry;
-import com.kenzie.marketing.application.repositories.CustomerRepository;
-import com.kenzie.marketing.application.repositories.model.CustomerRecord;
+import com.kenzie.marketing.application.controller.repositories.CustomerRepository;
+import com.kenzie.marketing.application.controller.repositories.model.CustomerRecord;
 import com.kenzie.marketing.referral.model.CustomerReferrals;
-import com.kenzie.marketing.referral.model.LeaderboardEntry;
-import com.kenzie.marketing.referral.model.Referral;
 import com.kenzie.marketing.referral.model.ReferralRequest;
 import com.kenzie.marketing.referral.model.client.ReferralServiceClient;
+import org.joda.time.DateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static java.util.UUID.randomUUID;
+
 
 @Service
 public class CustomerService {
@@ -42,10 +43,10 @@ public class CustomerService {
      */
     public List<CustomerResponse> findAllCustomers() {
         List<CustomerRecord> records = StreamSupport.stream(customerRepository.findAll().spliterator(), true).collect(Collectors.toList());
-
-        // Task 1 - Add your code here
-
-        return null;
+//
+        return records.stream()
+                .map(customerRecord -> toCustomerResponse(customerRecord))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -54,11 +55,12 @@ public class CustomerService {
      * @return The Customer with the given customerId
      */
     public CustomerResponse getCustomer(String customerId) {
-        Optional<CustomerRecord> record = customerRepository.findById(customerId);
 
-        // Task 1 - Add your code here
-
-        return null;
+        return Optional.of(customerRepository.findById(customerId))
+                .orElse(Optional.empty())
+                .stream()
+                .map(customerRecord -> toCustomerResponse(customerRecord))
+                .findFirst().orElse(null);
     }
 
     /**
@@ -71,9 +73,22 @@ public class CustomerService {
      */
     public CustomerResponse addNewCustomer(CreateCustomerRequest createCustomerRequest) {
 
-        // Task 1 - Add your code here
-
-        return null;
+        return Optional.of(createCustomerRequest)
+                .stream()
+                .map(customerRequest -> {
+                    if (createCustomerRequest.getReferrerId().isPresent() && !(customerRepository.existsById(createCustomerRequest.getReferrerId().toString()))) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid ReferrerID, nice try");
+                        //TODO include in one of the tests to verify exception is thrown
+                    }
+                    return toCustomerRecord(customerRequest);
+                })
+                .map(customerRecord -> {
+                    ReferralRequest referralRequest = new ReferralRequest(customerRecord.getId(), customerRecord.getReferrerId());
+                    customerRepository.save(customerRecord);
+                    referralServiceClient.addReferral(referralRequest);
+                    return toCustomerResponse(customerRecord);
+                })
+                .findFirst().orElse(null);
     }
 
     /**
@@ -82,17 +97,19 @@ public class CustomerService {
      * @param customerName - The new name for the customer
      */
     public CustomerResponse updateCustomer(String customerId, String customerName) {
-        Optional<CustomerRecord> customerExists = customerRepository.findById(customerId);
-        if (customerExists.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer Not Found");
-        }
-        CustomerRecord customerRecord = customerExists.get();
-        customerRecord.setName(customerName);
-        customerRepository.save(customerRecord);
 
-        // Task 1 - Add your code here
-
-        return null;
+        return Optional.ofNullable(customerRepository.findById(customerId))
+                .stream()
+                .map(customerRecord -> {
+                    if(customerRecord.isEmpty()) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer Not Found");
+                    }
+                    customerRecord.get().setName(customerName);
+                    customerRepository.save(customerRecord.get());
+                    return customerRecord;
+                })
+                .map(customerRecord -> toCustomerResponse(customerRecord.get()))
+                .findFirst().get();
     }
 
     /**
@@ -100,7 +117,7 @@ public class CustomerService {
      * @param customerId
      */
     public void deleteCustomer(String customerId) {
-        customerRepository.deleteById(customerId);
+        customerRepository.deleteById(customerId); //TODO write test for this!
     }
 
     /**
@@ -126,10 +143,13 @@ public class CustomerService {
      * @return
      */
     public List<CustomerResponse> getReferrals(String customerId) {
+        List<CustomerRecord> records = StreamSupport.stream(customerRepository.findAll().spliterator(), true).collect(Collectors.toList());
+        //TODO write unit test!
+        return records.stream()
+                .filter(customerRecord -> !(customerRecord.getReferrerId().equals(customerId)))
+                .map(customerRecord -> toCustomerResponse(customerRecord))
+                .collect(Collectors.toList());
 
-        // Task 1 - Add your code here
-
-        return null;
     }
 
     /**
@@ -138,7 +158,7 @@ public class CustomerService {
      */
     public List<LeaderboardUiEntry> getLeaderboard() {
 
-        // Task 2 - Add your code here
+        // Task 2 - Add your code here //TODO Task 2 and write test when code is complete
 
         return null;
     }
@@ -148,5 +168,30 @@ public class CustomerService {
        ----------------------------------------------------------------------------------------------------------- */
 
     // Add any private methods here
+    private CustomerResponse toCustomerResponse(CustomerRecord record) {
+        CustomerResponse customerResponse = new CustomerResponse();
 
+        customerResponse.setId(record.getId());
+        customerResponse.setName(record.getName());
+        customerResponse.setDateJoined(record.getDateCreated());
+        customerResponse.setReferrerId(record.getReferrerId());
+
+        CustomerRecord referrer;
+        if (customerRepository.existsById(record.getReferrerId())){
+            referrer = (customerRepository.findById(record.getReferrerId()).orElse(null));
+            customerResponse.setReferrerName(referrer.getName()); //TODO write test for this check
+        }
+        return customerResponse;
+    }
+    private CustomerRecord toCustomerRecord(CreateCustomerRequest createCustomerRequest) {
+        CustomerRecord customerRecord = new CustomerRecord();
+        customerRecord.setName(createCustomerRequest.getName());
+        customerRecord.setId(randomUUID().toString());
+        customerRecord.setDateCreated(DateTime.now().toString());
+        if(createCustomerRequest.getReferrerId().isPresent()) {
+            customerRecord.setReferrerId(createCustomerRequest.getReferrerId().toString());
+        }
+
+        return customerRecord;
+    }
 }

@@ -9,7 +9,7 @@
 
 # Fill out the following values
 # The path of your repo on github.  Don't but the whole URL, just the part after github.com/
-export UNIT_FIVE_REPO_NAME=ata-unit-five-project-$GITHUB_USERNAME
+export UNIT_FIVE_REPO_NAME=ata-unit-five-project-Joseph-Vanliew
 
 # Do not modify the rest of these unless you have been instructed to do so.
 export UNIT_FIVE_PROJECT_NAME=unitproject5
