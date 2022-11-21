@@ -154,7 +154,7 @@ public class EndpointUtility {
             deploymentName = System.getenv("STACK_NAME");
         }
         if (deploymentName == null) {
-            deploymentName = getEnvVarFromFile("CAPSTONE_SERVICE_STACK_DEV");
+            deploymentName = getEnvVarFromFile("UNIT_FIVE_SERVICE_STACK_DEV");
         }
         if (deploymentName == null) {
             throw new IllegalArgumentException("Could not find the deployment name in environment variables.  Make sure that you have set up your environment variables using the setupEnvironment.sh script.");

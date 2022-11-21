@@ -13,47 +13,9 @@ import com.google.common.collect.ImmutableMap;
 
 import java.util.List;
 
-public class ReferralDao {
-    private DynamoDBMapper mapper;
+public interface ReferralDao {
+    ReferralRecord addReferral(ReferralRecord referral);
+    List<ReferralRecord> findByReferrerId(String referrerId);
+    List<ReferralRecord> findUsersWithoutReferrerId();
 
-    /**
-     * Allows access to and manipulation of Match objects from the data store.
-     * @param mapper Access to DynamoDB
-     */
-    public ReferralDao(DynamoDBMapper mapper) {
-        this.mapper = mapper;
-    }
-
-    public ReferralRecord addReferral(ReferralRecord referral) {
-        try {
-            mapper.save(referral, new DynamoDBSaveExpression()
-                    .withExpected(ImmutableMap.of(
-                            "CustomerId",
-                            new ExpectedAttributeValue().withExists(false)
-                    )));
-        } catch (ConditionalCheckFailedException e) {
-            throw new InvalidDataException("Customer has already been referred");
-        }
-
-        return referral;
-    }
-
-    public List<ReferralRecord> findByReferrerId(String referrerId) {
-        ReferralRecord referralRecord = new ReferralRecord();
-        referralRecord.setReferrerId(referrerId);
-
-        DynamoDBQueryExpression<ReferralRecord> queryExpression = new DynamoDBQueryExpression<ReferralRecord>()
-                .withHashKeyValues(referralRecord)
-                .withIndexName("ReferrerIdIndex")
-                .withConsistentRead(false);
-
-        return mapper.query(ReferralRecord.class, queryExpression);
-    }
-
-    public List<ReferralRecord> findUsersWithoutReferrerId() {
-        DynamoDBScanExpression scanExpression = new DynamoDBScanExpression()
-                .withFilterExpression("attribute_not_exists(ReferrerId)");
-
-        return mapper.scan(ReferralRecord.class, scanExpression);
-    }
 }

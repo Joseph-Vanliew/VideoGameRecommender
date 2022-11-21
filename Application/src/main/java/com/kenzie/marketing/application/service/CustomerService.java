@@ -6,6 +6,8 @@ import com.kenzie.marketing.application.controller.model.LeaderboardUiEntry;
 import com.kenzie.marketing.application.controller.repositories.CustomerRepository;
 import com.kenzie.marketing.application.controller.repositories.model.CustomerRecord;
 import com.kenzie.marketing.referral.model.CustomerReferrals;
+import com.kenzie.marketing.referral.model.LeaderboardEntry;
+import com.kenzie.marketing.referral.model.Referral;
 import com.kenzie.marketing.referral.model.ReferralRequest;
 import com.kenzie.marketing.referral.model.client.ReferralServiceClient;
 import org.joda.time.DateTime;
@@ -13,10 +15,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -32,6 +33,7 @@ public class CustomerService {
     private CustomerRepository customerRepository;
     private ReferralServiceClient referralServiceClient;
 
+
     public CustomerService(CustomerRepository customerRepository, ReferralServiceClient referralServiceClient) {
         this.customerRepository = customerRepository;
         this.referralServiceClient = referralServiceClient;
@@ -45,7 +47,7 @@ public class CustomerService {
         List<CustomerRecord> records = StreamSupport.stream(customerRepository.findAll().spliterator(), true).collect(Collectors.toList());
 //
         return records.stream()
-                .map(customerRecord -> toCustomerResponse(customerRecord))
+                .map(this::toCustomerResponseFromRecord)
                 .collect(Collectors.toList());
     }
 
@@ -55,12 +57,8 @@ public class CustomerService {
      * @return The Customer with the given customerId
      */
     public CustomerResponse getCustomer(String customerId) {
-
-        return Optional.of(customerRepository.findById(customerId))
-                .orElse(Optional.empty())
-                .stream()
-                .map(customerRecord -> toCustomerResponse(customerRecord))
-                .findFirst().orElse(null);
+        return toCustomerResponseFromRecord(customerRepository.findById(customerId)
+                .orElse(null));
     }
 
     /**
@@ -77,7 +75,7 @@ public class CustomerService {
                 .stream()
                 .map(customerRequest -> {
                     if (createCustomerRequest.getReferrerId().isPresent() && !(customerRepository.existsById(createCustomerRequest.getReferrerId().toString()))) {
-                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid ReferrerID, nice try");
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid ReferrerID");
                         //TODO include in one of the tests to verify exception is thrown
                     }
                     return toCustomerRecord(customerRequest);
@@ -86,7 +84,7 @@ public class CustomerService {
                     ReferralRequest referralRequest = new ReferralRequest(customerRecord.getId(), customerRecord.getReferrerId());
                     customerRepository.save(customerRecord);
                     referralServiceClient.addReferral(referralRequest);
-                    return toCustomerResponse(customerRecord);
+                    return toCustomerResponseFromRecord(customerRecord);
                 })
                 .findFirst().orElse(null);
     }
@@ -98,17 +96,16 @@ public class CustomerService {
      */
     public CustomerResponse updateCustomer(String customerId, String customerName) {
 
-        return Optional.ofNullable(customerRepository.findById(customerId))
+        return Optional.of(customerRepository.findById(customerId))
                 .stream()
-                .map(customerRecord -> {
+                .peek(customerRecord -> {
                     if(customerRecord.isEmpty()) {
                         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer Not Found");
                     }
                     customerRecord.get().setName(customerName);
                     customerRepository.save(customerRecord.get());
-                    return customerRecord;
                 })
-                .map(customerRecord -> toCustomerResponse(customerRecord.get()))
+                .map(customerRecord -> toCustomerResponseFromRecord(customerRecord.get()))
                 .findFirst().get();
     }
 
@@ -143,11 +140,13 @@ public class CustomerService {
      * @return
      */
     public List<CustomerResponse> getReferrals(String customerId) {
-        List<CustomerRecord> records = StreamSupport.stream(customerRepository.findAll().spliterator(), true).collect(Collectors.toList());
+        if (!customerRepository.existsById(customerId)) {
+            throw new IllegalArgumentException("Customer does not exist");
+        }
         //TODO write unit test!
-        return records.stream()
-                .filter(customerRecord -> !(customerRecord.getReferrerId().equals(customerId)))
-                .map(customerRecord -> toCustomerResponse(customerRecord))
+        List <Referral> referrals = referralServiceClient.getDirectReferrals(customerId);
+        return referrals.stream()
+                .map(this::toCustomerResponseFromReferral)
                 .collect(Collectors.toList());
 
     }
@@ -159,8 +158,24 @@ public class CustomerService {
     public List<LeaderboardUiEntry> getLeaderboard() {
 
         // Task 2 - Add your code here //TODO Task 2 and write test when code is complete
+        List<LeaderboardUiEntry> leaderBoard = new ArrayList<>();
+        List<LeaderboardEntry> topFive = referralServiceClient.getLeaderboard();
 
-        return null;
+        LeaderboardUiEntry leaderboardUiEntry = new LeaderboardUiEntry();
+        for(LeaderboardEntry leaderboardEntry: topFive) {
+            leaderboardUiEntry.setCustomerId(leaderboardEntry.getCustomerId());
+            leaderboardUiEntry.setNumReferrals(leaderboardEntry.getNumReferrals());
+
+            CustomerRecord customerRecord = customerRepository.findById(leaderboardEntry.getCustomerId()).get();
+            if(customerRepository.findById(leaderboardEntry.getCustomerId()).isPresent()) {
+                if(!(customerRecord.getName().isEmpty())) {
+                    leaderboardUiEntry.setCustomerName(customerRecord.getName());
+                }
+                leaderboardUiEntry.setCustomerName("No name found");
+            }
+            leaderBoard.add(leaderboardUiEntry);
+        }
+        return leaderBoard;
     }
 
     /* -----------------------------------------------------------------------------------------------------------
@@ -168,7 +183,10 @@ public class CustomerService {
        ----------------------------------------------------------------------------------------------------------- */
 
     // Add any private methods here
-    private CustomerResponse toCustomerResponse(CustomerRecord record) {
+    private CustomerResponse toCustomerResponseFromRecord(CustomerRecord record) {
+        if(record == null) {
+            return null;
+        }
         CustomerResponse customerResponse = new CustomerResponse();
 
         customerResponse.setId(record.getId());
@@ -193,5 +211,12 @@ public class CustomerService {
         }
 
         return customerRecord;
+    }
+    private CustomerResponse toCustomerResponseFromReferral (Referral referral){
+        CustomerResponse customerResponse = new CustomerResponse();
+        customerResponse.setId(referral.getCustomerId());
+        customerResponse.setReferrerId(referral.getReferrerId());
+        customerResponse.setDateJoined(referral.getReferralDate());
+        return customerResponse;
     }
 }
