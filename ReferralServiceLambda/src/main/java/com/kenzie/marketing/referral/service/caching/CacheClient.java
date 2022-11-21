@@ -4,7 +4,7 @@ import com.kenzie.marketing.referral.service.dependency.DaggerServiceComponent;
 
 import com.kenzie.marketing.referral.service.exceptions.InvalidDataException;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+
 
 import javax.inject.Inject;
 import java.util.Optional;

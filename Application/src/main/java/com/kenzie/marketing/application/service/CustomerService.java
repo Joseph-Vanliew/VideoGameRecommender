@@ -30,8 +30,8 @@ public class CustomerService {
     private static final Double REFERRAL_BONUS_SECOND_LEVEL = 3.0;
     private static final Double REFERRAL_BONUS_THIRD_LEVEL = 1.0;
 
-    private CustomerRepository customerRepository;
-    private ReferralServiceClient referralServiceClient;
+    private final CustomerRepository customerRepository;
+    private final ReferralServiceClient referralServiceClient;
 
 
     public CustomerService(CustomerRepository customerRepository, ReferralServiceClient referralServiceClient) {
@@ -91,7 +91,7 @@ public class CustomerService {
 
     /**
      * updateCustomer - This updates the customer name for the given customer id
-     * @param customerId - The Id of the customer to update
+     * @param customerId - The id of the customer to update
      * @param customerName - The new name for the customer
      */
     public CustomerResponse updateCustomer(String customerId, String customerName) {
@@ -148,7 +148,6 @@ public class CustomerService {
         return referrals.stream()
                 .map(this::toCustomerResponseFromReferral)
                 .collect(Collectors.toList());
-
     }
 
     /**
