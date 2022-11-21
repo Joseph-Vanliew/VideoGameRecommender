@@ -122,7 +122,7 @@ public class CustomerServiceTest {
      *  customerService.addNewCustomer
      *  ------------------------------------------------------------------------ **/
     @Test
-    void addNewCustomer() {
+    void addNewCustomer_thenDelete() {
         // GIVEN
         String customerName = "customerName";
 
@@ -147,6 +147,9 @@ public class CustomerServiceTest {
         Assertions.assertEquals(record.getName(), customerName, "The customer name matches");
         Assertions.assertNotNull(record.getDateCreated(), "The customer date exists");
         Assertions.assertNull(record.getReferrerId(), "The referrerId is null");
+
+        customerService.deleteCustomer(record.getName());
+
     }
 
     /** ------------------------------------------------------------------------
