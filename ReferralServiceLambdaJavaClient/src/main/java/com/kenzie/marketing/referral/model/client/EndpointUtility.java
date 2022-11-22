@@ -5,6 +5,8 @@ import com.amazonaws.services.apigateway.AmazonApiGatewayClientBuilder;
 import com.amazonaws.services.apigateway.model.GetRestApisRequest;
 import com.amazonaws.services.apigateway.model.GetRestApisResult;
 import com.amazonaws.services.apigateway.model.RestApi;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -28,6 +30,8 @@ import java.util.regex.Pattern;
 
 public class EndpointUtility {
     private String apiEndpoint;
+
+    static final Logger log = LogManager.getLogger();
 
     public EndpointUtility() {
         this.apiEndpoint = getApiEndpint();
@@ -169,13 +173,14 @@ public class EndpointUtility {
         }
 
         String deploymentName = getStackName();
-
+        log.info(deploymentName);
         AmazonApiGateway apiGatewayClient = AmazonApiGatewayClientBuilder.defaultClient();
         GetRestApisRequest request = new GetRestApisRequest();
         request.setLimit(500);
         GetRestApisResult result = apiGatewayClient.getRestApis(request);
 
         String endpointId = null;
+        log.info(result.getItems());
         for (RestApi restApi : result.getItems()) {
             if (restApi.getName().equals(deploymentName)) {
                 endpointId = restApi.getId();
