@@ -150,7 +150,7 @@ public class CustomerServiceTest {
         Assertions.assertNotNull(record.getId(), "The customer id exists");
         assertEquals(record.getName(), customerName, "The customer name matches");
         Assertions.assertNotNull(record.getDateCreated(), "The customer date exists");
-        Assertions.assertNull(record.getReferrerId(), "The referrerId is null");
+        Assertions.assertEquals(record.getReferrerId(), "");
 
         customerService.deleteCustomer(record.getName());
 
@@ -232,6 +232,4 @@ public class CustomerServiceTest {
         assertEquals(leaderboardUiEntry.size(), 1);
         assertEquals(leaderboardUiEntry.get(0).getCustomerName(), "No name present");
     }
-
-
 }

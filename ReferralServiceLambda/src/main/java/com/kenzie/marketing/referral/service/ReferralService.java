@@ -62,26 +62,10 @@ public class ReferralService {
                 throw new RuntimeException(e);
             }
         }
-        return entries.stream().sorted(new ReferralComparator().reversed()).limit(5).collect(Collectors.toList());
+        return entries.stream()
+                .sorted(new ReferralComparator().reversed()).limit(5)
+                .collect(Collectors.toList());
     }
-
-//    private void dfs(Referral customer, Set<LeaderboardEntry> entries){
-//        if(customer == null || entries.isEmpty()) {
-//            return;
-//        }
-//
-//        List<Referral> referralsList = getDirectReferrals(customer.getCustomerId());
-//
-//        LeaderboardEntry entry = new LeaderboardEntry();
-//        entry.setCustomerId(customer.getCustomerId());
-//        entry.setNumReferrals(referralsList.size());
-//
-//        entries.add(entry);
-//
-//        for(Referral referral : referralsList) {
-//            dfs(referral, entries);
-//        }
-//    }
 
     public CustomerReferrals getCustomerReferralSummary(String customerId) {
         // Task 2 Code Here
