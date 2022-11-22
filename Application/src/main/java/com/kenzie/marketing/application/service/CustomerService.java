@@ -176,11 +176,15 @@ public class CustomerService {
         customerResponse.setDateJoined(record.getDateCreated());
         customerResponse.setReferrerId(record.getReferrerId());
 
-        CustomerRecord referrer;
+
         if (customerRepository.existsById(record.getReferrerId())){
-            referrer = (customerRepository.findById(record.getReferrerId()).orElse(null));
+            CustomerRecord referrer = customerRepository.findById(record.getReferrerId()).get();
+//            referrer = (customerRepository.findById(record.getReferrerId()).orElse(null));
             customerResponse.setReferrerName(referrer.getName()); //TODO write test for this check
+        } else{
+            customerResponse.setReferrerName("");
         }
+
         return customerResponse;
     }
     private CustomerRecord toCustomerRecord(CreateCustomerRequest createCustomerRequest) {
