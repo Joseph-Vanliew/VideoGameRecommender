@@ -4,7 +4,6 @@ phases:
   build:
     commands:
       - echo "build phase"
-      - chmod +x ./buildScripts/runIntegrationTests.sh
       - ./buildScripts/runIntegrationTests.sh
   post_build:
     commands:
