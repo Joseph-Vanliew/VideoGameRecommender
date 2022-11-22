@@ -16,8 +16,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -138,8 +141,13 @@ public class CustomerService {
             throw new IllegalArgumentException("Customer does not exist");
         }
         //TODO write unit test!
-        List <Referral> referrals = referralServiceClient.getDirectReferrals(customerId);
-        return referrals.stream()
+//        List<Referral> referrals = referralServiceClient.getDirectReferrals(customerId);
+//        return referrals.stream()
+//                .map(this::toCustomerResponseFromReferral)
+//                .collect(Collectors.toList());
+        return Optional.ofNullable(referralServiceClient.getDirectReferrals(customerId))
+                .orElse(Collections.emptyList())
+                .stream()
                 .map(this::toCustomerResponseFromReferral)
                 .collect(Collectors.toList());
     }
@@ -174,16 +182,11 @@ public class CustomerService {
         customerResponse.setId(record.getId());
         customerResponse.setName(record.getName());
         customerResponse.setDateJoined(record.getDateCreated());
-        customerResponse.setReferrerId(record.getReferrerId());
-
-
-        if (customerRepository.existsById(record.getReferrerId())){
-            CustomerRecord referrer = customerRepository.findById(record.getReferrerId()).get();
-//            referrer = (customerRepository.findById(record.getReferrerId()).orElse(null));
-            customerResponse.setReferrerName(referrer.getName()); //TODO write test for this check
-        } else{
-            customerResponse.setReferrerName("");
+        if (record.getReferrerId() != null && !record.getReferrerId().equals("")) {
+            Optional<CustomerRecord> customerRecord = customerRepository.findById(record.getReferrerId());
+            customerRecord.ifPresent(customerRecord1 -> customerResponse.setReferrerName(customerRecord1.getName()));
         }
+        customerResponse.setReferrerId(record.getReferrerId());
 
         return customerResponse;
     }
@@ -192,19 +195,16 @@ public class CustomerService {
         customerRecord.setName(createCustomerRequest.getName());
         customerRecord.setId(randomUUID().toString());
         customerRecord.setDateCreated(DateTime.now().toString());
-        if(createCustomerRequest.getReferrerId().isPresent()) {
-            customerRecord.setReferrerId(createCustomerRequest.getReferrerId().toString());
-        } else {
-            customerRecord.setReferrerId("");
-        }
+        customerRecord.setReferrerId(createCustomerRequest.getReferrerId().orElse(""));
+
         return customerRecord;
     }
     private CustomerResponse toCustomerResponseFromReferral (Referral referral){
-        CustomerResponse customerResponse = new CustomerResponse();
-        customerResponse.setId(referral.getCustomerId());
-        customerResponse.setReferrerId(referral.getReferrerId());
-        customerResponse.setDateJoined(referral.getReferralDate());
-        return customerResponse;
+        Optional<CustomerRecord> record = customerRepository.findById(referral.getCustomerId());
+        if(record.isPresent()) {
+            return toCustomerResponseFromRecord(record.get());
+        }
+        return null;
     }
     private LeaderboardUiEntry toLeaderboardUI(LeaderboardEntry entry) {
         LeaderboardUiEntry leaderboardUiEntry = new LeaderboardUiEntry();
