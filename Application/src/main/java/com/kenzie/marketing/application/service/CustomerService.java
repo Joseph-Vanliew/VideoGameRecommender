@@ -190,8 +190,9 @@ public class CustomerService {
         customerRecord.setDateCreated(DateTime.now().toString());
         if(createCustomerRequest.getReferrerId().isPresent()) {
             customerRecord.setReferrerId(createCustomerRequest.getReferrerId().toString());
+        } else {
+            customerRecord.setReferrerId("");
         }
-
         return customerRecord;
     }
     private CustomerResponse toCustomerResponseFromReferral (Referral referral){
