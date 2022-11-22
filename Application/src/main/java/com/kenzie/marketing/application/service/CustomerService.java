@@ -3,8 +3,8 @@ package com.kenzie.marketing.application.service;
 import com.kenzie.marketing.application.controller.model.CreateCustomerRequest;
 import com.kenzie.marketing.application.controller.model.CustomerResponse;
 import com.kenzie.marketing.application.controller.model.LeaderboardUiEntry;
-import com.kenzie.marketing.application.controller.repositories.CustomerRepository;
-import com.kenzie.marketing.application.controller.repositories.model.CustomerRecord;
+import com.kenzie.marketing.application.repositories.CustomerRepository;
+import com.kenzie.marketing.application.repositories.model.CustomerRecord;
 import com.kenzie.marketing.referral.model.CustomerReferrals;
 import com.kenzie.marketing.referral.model.LeaderboardEntry;
 import com.kenzie.marketing.referral.model.Referral;
@@ -15,7 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -70,23 +70,17 @@ public class CustomerService {
      * @return A CustomerResponse describing the customer
      */
     public CustomerResponse addNewCustomer(CreateCustomerRequest createCustomerRequest) {
+        CustomerRecord customerRecord = (toCustomerRecord(createCustomerRequest));
 
-        return Optional.of(createCustomerRequest)
-                .stream()
-                .map(customerRequest -> {
-                    if (createCustomerRequest.getReferrerId().isPresent() && !(customerRepository.existsById(createCustomerRequest.getReferrerId().toString()))) {
-                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid ReferrerID");
-                        //TODO include in one of the tests to verify exception is thrown
-                    }
-                    return toCustomerRecord(customerRequest);
-                })
-                .map(customerRecord -> {
-                    ReferralRequest referralRequest = new ReferralRequest(customerRecord.getId(), customerRecord.getReferrerId());
-                    customerRepository.save(customerRecord);
-                    referralServiceClient.addReferral(referralRequest);
-                    return toCustomerResponseFromRecord(customerRecord);
-                })
-                .findFirst().orElse(null);
+        if(customerRecord.getReferrerId() != null && !customerRecord.getReferrerId().equals("") && !customerRepository.existsById(customerRecord.getReferrerId())){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "referralID was not found");
+        }
+
+        ReferralRequest referralRequest = new ReferralRequest(customerRecord.getId(), customerRecord.getReferrerId());
+        referralServiceClient.addReferral(referralRequest);
+
+        customerRepository.save(customerRecord);
+        return toCustomerResponseFromRecord(customerRecord);
     }
 
     /**
@@ -154,27 +148,16 @@ public class CustomerService {
      * getLeaderboard - This calls the referral service to retrieve the current top 5 leaderboard of the most referrals
      * @return
      */
+
     public List<LeaderboardUiEntry> getLeaderboard() {
+        // Task 2 - Add your code here
+        List<LeaderboardEntry> leaderBoardList = referralServiceClient.getLeaderboard();
 
-        // Task 2 - Add your code here //TODO Task 2 and write test when code is complete
-        List<LeaderboardUiEntry> leaderBoard = new ArrayList<>();
-        List<LeaderboardEntry> topFive = referralServiceClient.getLeaderboard();
-
-        LeaderboardUiEntry leaderboardUiEntry = new LeaderboardUiEntry();
-        for(LeaderboardEntry leaderboardEntry: topFive) {
-            leaderboardUiEntry.setCustomerId(leaderboardEntry.getCustomerId());
-            leaderboardUiEntry.setNumReferrals(leaderboardEntry.getNumReferrals());
-
-            CustomerRecord customerRecord = customerRepository.findById(leaderboardEntry.getCustomerId()).get();
-            if(customerRepository.findById(leaderboardEntry.getCustomerId()).isPresent()) {
-                if(!(customerRecord.getName().isEmpty())) {
-                    leaderboardUiEntry.setCustomerName(customerRecord.getName());
-                }
-                leaderboardUiEntry.setCustomerName("No name found");
-            }
-            leaderBoard.add(leaderboardUiEntry);
-        }
-        return leaderBoard;
+        return leaderBoardList
+                .stream()
+                .filter(referralCount -> referralCount.getNumReferrals()>0)
+                .map(this::toLeaderboardUI)
+                .collect(Collectors.toList());
     }
 
     /* -----------------------------------------------------------------------------------------------------------
@@ -217,5 +200,18 @@ public class CustomerService {
         customerResponse.setReferrerId(referral.getReferrerId());
         customerResponse.setDateJoined(referral.getReferralDate());
         return customerResponse;
+    }
+    private LeaderboardUiEntry toLeaderboardUI(LeaderboardEntry entry) {
+        LeaderboardUiEntry leaderboardUiEntry = new LeaderboardUiEntry();
+        leaderboardUiEntry.setCustomerId(entry.getCustomerId());
+        leaderboardUiEntry.setNumReferrals(entry.getNumReferrals());
+
+        if (customerRepository.existsById(entry.getCustomerId())) {
+            leaderboardUiEntry.setCustomerName(getCustomer(entry.getCustomerId()).getName());
+        } else {
+            leaderboardUiEntry.setCustomerName("No name present");
+        }
+
+        return leaderboardUiEntry;
     }
 }

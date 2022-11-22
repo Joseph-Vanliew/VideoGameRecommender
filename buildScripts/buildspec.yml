@@ -14,18 +14,10 @@ phases:
       - aws s3 cp Application/build/libs/Application-0.0.1-SNAPSHOT.jar s3://$ARTIFACT_BUCKET/
       - aws cloudformation package --template-file Application-template.yml --s3-bucket $ARTIFACT_BUCKET --output-template-file application.yml
 reports:
-  app-jacoco-report:
-    files:
-      - 'Application/build/reports/jacoco/test/jacocoTestReport.xml'
-    file-format: 'JACOCOXML'
   app-junit-reports:
     files:
       - 'Application/build/test-results/test/*.xml'
     file-format: "JUNITXML"
-  service-jacoco-report:
-    files:
-      - 'ReferralServiceLambda/build/reports/jacoco/test/jacocoTestReport.xml'
-    file-format: 'JACOCOXML'
   service-junit-reports:
     files:
       - 'ReferralServiceLambda/build/test-results/test/*.xml'

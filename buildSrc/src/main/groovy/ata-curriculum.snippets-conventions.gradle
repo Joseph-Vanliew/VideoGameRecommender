@@ -1,13 +1,8 @@
 plugins {
-
   id 'ata-curriculum.java-conventions'
-
   id 'maven-publish'
-
   id 'com.github.spotbugs'
-
   id 'checkstyle'
-
 }
 
 
@@ -17,11 +12,8 @@ def brazilOutputDir = "${buildDir}/private/"
 
 
 repositories {
-
   maven {
-
     url 'https://plugins.gradle.org/m2/'
-
   }
 
 }
@@ -29,25 +21,17 @@ repositories {
 
 
 task copyConfiguration(type: Copy) {
-
   from 'configuration'
-
   into brazilOutputDir
-
 }
 
 
 
 test {
-
   dependsOn(publish, copyConfiguration)
-
   testLogging {
-
     showStandardStreams = true
-
     exceptionFormat = 'full'
-
     events "passed", "skipped", "failed"
 
   }
@@ -63,13 +47,9 @@ test {
  */
 
 tasks.register("staticchecks") {
-
   dependsOn check
-
   group = 'Verification'
-
   description = 'Runs check, ensuring failures for spotbugs, and checkstyle.'
-
 }
 
 
@@ -83,13 +63,9 @@ tasks.register("staticchecks") {
 */
 
 checkstyle {
-
   toolVersion '8.17'
-
   configFile = rootProject.file('Utilities/ATACheckstyle/configuration/checkstyle/checkstyle.xml')
-
   sourceSets = [sourceSets.main]
-
 }
 
 
@@ -101,9 +77,7 @@ checkstyle {
  */
 
 checkstyleMain.doFirst {
-
   ignoreFailures = !gradle.taskGraph.allTasks.any({ it.name ==~ /.*staticchecks/ })
-
 }
 
 
@@ -141,11 +115,8 @@ spotbugsMain.outputs.upToDateWhen { false }
  */
 
 spotbugsMain.onlyIf {
-
   return null != sourceSets.main &&
-
           0 < sourceSets.main.allJava.getFiles().size()
-
 }
 
 
@@ -157,9 +128,7 @@ spotbugsMain.onlyIf {
  */
 
 spotbugsMain.doFirst {
-
   ignoreFailures = !gradle.taskGraph.allTasks.any({ it.name ==~ /.*staticchecks/ })
-
 }
 
 
@@ -171,47 +140,24 @@ spotbugsMain.doFirst {
  */
 
 test.doFirst {
-
   ignoreFailures = !gradle.taskGraph.allTasks.any({ it.name ==~ /.*wflowtest/ })
-
 }
-
-
 
 // For running subsets of unit tests that will fail the build if a test fails
 
 task wflowtest {
-
   dependsOn test
-
   group = 'Verification'
-
 }
-
-
-
 task runMain(type: JavaExec) {
-
   group = "Execution"
-
   description = "Run the main class with JavaExecTask"
-
   classpath = sourceSets.main.runtimeClasspath
-
   main = findProperty("mainClass")
-
   // Connect standard in so that classes run from main() can provide user input (see
-
   // com.amazon.ata.dynamodbannotationsload.classroom, for example)
-
   standardInput = System.in
-
 }
-
-
-
 dependencies {
-
   implementation project(':Utilities')
-
 }

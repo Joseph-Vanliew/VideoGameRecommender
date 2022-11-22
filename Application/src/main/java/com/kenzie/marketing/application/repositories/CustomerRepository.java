@@ -1,6 +1,6 @@
-package com.kenzie.marketing.application.controller.repositories;
+package com.kenzie.marketing.application.repositories;
 
-import com.kenzie.marketing.application.controller.repositories.model.CustomerRecord;
+import com.kenzie.marketing.application.repositories.model.CustomerRecord;
 import org.socialsignin.spring.data.dynamodb.repository.EnableScan;
 import org.springframework.data.repository.CrudRepository;
 

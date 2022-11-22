@@ -2,9 +2,11 @@ package com.kenzie.marketing.application.service;
 
 import com.kenzie.marketing.application.controller.model.CreateCustomerRequest;
 import com.kenzie.marketing.application.controller.model.CustomerResponse;
-import com.kenzie.marketing.application.controller.repositories.CustomerRepository;
-import com.kenzie.marketing.application.controller.repositories.model.CustomerRecord;
+import com.kenzie.marketing.application.controller.model.LeaderboardUiEntry;
+import com.kenzie.marketing.application.repositories.CustomerRepository;
+import com.kenzie.marketing.application.repositories.model.CustomerRecord;
 
+import com.kenzie.marketing.referral.model.LeaderboardEntry;
 import com.kenzie.marketing.referral.model.client.ReferralServiceClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,8 +19,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static java.util.UUID.randomUUID;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -63,17 +67,17 @@ public class CustomerServiceTest {
 
         // THEN
         Assertions.assertNotNull(customers, "The customer list is returned");
-        Assertions.assertEquals(2, customers.size(), "There are two customers");
+        assertEquals(2, customers.size(), "There are two customers");
 
         for (CustomerResponse customer : customers) {
             if (customer.getId().equals(record1.getId())) {
-                Assertions.assertEquals(record1.getId(), customer.getId(), "The customer id matches");
-                Assertions.assertEquals(record1.getName(), customer.getName(), "The customer name matches");
-                Assertions.assertEquals(record1.getDateCreated(), customer.getDateJoined(), "The customer date matches");
+                assertEquals(record1.getId(), customer.getId(), "The customer id matches");
+                assertEquals(record1.getName(), customer.getName(), "The customer name matches");
+                assertEquals(record1.getDateCreated(), customer.getDateJoined(), "The customer date matches");
             } else if (customer.getId().equals(record2.getId())) {
-                Assertions.assertEquals(record2.getId(), customer.getId(), "The customer id matches");
-                Assertions.assertEquals(record2.getName(), customer.getName(), "The customer name matches");
-                Assertions.assertEquals(record2.getDateCreated(), customer.getDateJoined(), "The customer date matches");
+                assertEquals(record2.getId(), customer.getId(), "The customer id matches");
+                assertEquals(record2.getName(), customer.getName(), "The customer name matches");
+                assertEquals(record2.getDateCreated(), customer.getDateJoined(), "The customer date matches");
             } else {
                 Assertions.assertTrue(false, "Customer returned that was not in the records!");
             }
@@ -100,9 +104,9 @@ public class CustomerServiceTest {
 
         // THEN
         Assertions.assertNotNull(customer, "The customer is returned");
-        Assertions.assertEquals(record.getId(), customer.getId(), "The customer id matches");
-        Assertions.assertEquals(record.getName(), customer.getName(), "The customer name matches");
-        Assertions.assertEquals(record.getDateCreated(), customer.getDateJoined(), "The customer date matches");
+        assertEquals(record.getId(), customer.getId(), "The customer id matches");
+        assertEquals(record.getName(), customer.getName(), "The customer name matches");
+        assertEquals(record.getDateCreated(), customer.getDateJoined(), "The customer date matches");
     }
 
     @Test
@@ -144,7 +148,7 @@ public class CustomerServiceTest {
 
         Assertions.assertNotNull(record, "The customer record is returned");
         Assertions.assertNotNull(record.getId(), "The customer id exists");
-        Assertions.assertEquals(record.getName(), customerName, "The customer name matches");
+        assertEquals(record.getName(), customerName, "The customer name matches");
         Assertions.assertNotNull(record.getDateCreated(), "The customer date exists");
         Assertions.assertNull(record.getReferrerId(), "The referrerId is null");
 
@@ -181,9 +185,9 @@ public class CustomerServiceTest {
         CustomerRecord record = customerRecordCaptor.getValue();
 
         Assertions.assertNotNull(record, "The customer record is returned");
-        Assertions.assertEquals(record.getId(), customerId, "The customer id matches");
-        Assertions.assertEquals(record.getName(), newCustomerName, "The customer name matches");
-        Assertions.assertEquals(record.getDateCreated(), oldCustomerRecord.getDateCreated(), "The customer date has not changed");
+        assertEquals(record.getId(), customerId, "The customer id matches");
+        assertEquals(record.getName(), newCustomerName, "The customer name matches");
+        assertEquals(record.getDateCreated(), oldCustomerRecord.getDateCreated(), "The customer date has not changed");
     }
 
     @Test
@@ -210,6 +214,24 @@ public class CustomerServiceTest {
      *  ------------------------------------------------------------------------ **/
 
     // Write additional tests here
+    @Test
+    void getLeaderboard() {
+        // GIVEN
+        List<LeaderboardEntry> entries = new ArrayList<>();
+        LeaderboardEntry entry = new LeaderboardEntry();
+        entry.setCustomerId(UUID.randomUUID().toString());
+        entry.setNumReferrals(Integer.MAX_VALUE);
+        entries.add(entry);
+
+        // WHEN
+        when(referralServiceClient.getLeaderboard()).thenReturn(entries);
+        List<LeaderboardUiEntry> leaderboardUiEntry = customerService.getLeaderboard();
+
+        // THEN
+        assertEquals(leaderboardUiEntry.get(0).getCustomerId(), entry.getCustomerId());
+        assertEquals(leaderboardUiEntry.size(), 1);
+        assertEquals(leaderboardUiEntry.get(0).getCustomerName(), "No name present");
+    }
 
 
 }

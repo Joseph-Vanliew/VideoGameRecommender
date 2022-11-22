@@ -9,9 +9,11 @@
 
 # Fill out the following values
 # The path of your repo on github.  Don't but the whole URL, just the part after github.com/
+
 export UNIT_FIVE_REPO_NAME=ata-unit-five-project-Joseph-Vanliew
 
 # Do not modify the rest of these unless you have been instructed to do so.
+export GITHUB_USERNAME=joseph-vanliew
 export UNIT_FIVE_PROJECT_NAME=unitproject5
 export UNIT_FIVE_PIPELINE_STACK=$UNIT_FIVE_PROJECT_NAME-$GITHUB_USERNAME
 export UNIT_FIVE_ARTIFACT_BUCKET=$UNIT_FIVE_PROJECT_NAME-$GITHUB_USERNAME-artifacts

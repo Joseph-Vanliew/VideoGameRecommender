@@ -1,9 +1,7 @@
 package com.kenzie.marketing.referral.service;
 
 
-import com.kenzie.marketing.referral.model.Referral;
-import com.kenzie.marketing.referral.model.ReferralRequest;
-import com.kenzie.marketing.referral.model.ReferralResponse;
+import com.kenzie.marketing.referral.model.*;
 import com.kenzie.marketing.referral.service.converter.ZonedDateTimeConverter;
 import com.kenzie.marketing.referral.service.dao.ReferralDao;
 import com.kenzie.marketing.referral.service.exceptions.InvalidDataException;
@@ -130,5 +128,75 @@ class ReferralServiceTest {
     }
 
     // Write additional tests here
+    @Test
+    void getCustomerReferralSummary() {
+        //GIVEN
+        String originalCustomerId = "This is the first ID";
+        String firstLevelReferralId = "firstLevel";
+        ReferralRecord firstLevelRecord = new ReferralRecord();
+        firstLevelRecord.setCustomerId(firstLevelReferralId);
+        firstLevelRecord.setReferrerId(originalCustomerId);
+        String secondLevelReferralId = "secondLevel";
+        ReferralRecord secondLevelRecord = new ReferralRecord();
+        secondLevelRecord.setCustomerId(secondLevelReferralId);
+        secondLevelRecord.setReferrerId(firstLevelReferralId);
+        String thirdLevelReferralId = "thirdLevel";
+        ReferralRecord thirdLevelRecord = new ReferralRecord();
+        thirdLevelRecord.setCustomerId(thirdLevelReferralId);
+        thirdLevelRecord.setReferrerId(secondLevelReferralId);
+
+        List<ReferralRecord> firstLevelReferralList = new ArrayList<>();
+        firstLevelReferralList.add(firstLevelRecord);
+        List<ReferralRecord> secondLevelReferralList = new ArrayList<>();
+        secondLevelReferralList.add(secondLevelRecord);
+        List<ReferralRecord> thirdLevelReferralList = new ArrayList<>();
+        thirdLevelReferralList.add(thirdLevelRecord);
+
+        when(referralDao.findByReferrerId(originalCustomerId)).thenReturn(firstLevelReferralList);
+        when(referralDao.findByReferrerId(firstLevelReferralId)).thenReturn(secondLevelReferralList);
+        when(referralDao.findByReferrerId(secondLevelReferralId)).thenReturn(thirdLevelReferralList);
+
+        //WHEN
+        CustomerReferrals referrals = referralService.getCustomerReferralSummary(originalCustomerId);
+
+        //THEN
+        assertEquals(referrals.getNumFirstLevelReferrals(), 1, "Expected One First Level Referral");
+        assertEquals(referrals.getNumSecondLevelReferrals(), 1, "Expected One Second Level Referral");
+        assertEquals(referrals.getNumThirdLevelReferrals(), 1, "Expected One Third Level Referral");
+    }
+
+    /** ------------------------------------------------------------------------
+     *  ReferralService.getReferralLeaderboard()
+     *  ------------------------------------------------------------------------ **/
+
+    @Test
+    void getReferralLeaderboard() {
+        //GIVEN
+        String originalCustomerId = "This is the first ID";
+        ReferralRecord record = new ReferralRecord();
+        record.setCustomerId(originalCustomerId);
+        String firstLevelReferralId = "firstLevel";
+        ReferralRecord firstLevelRecord = new ReferralRecord();
+        firstLevelRecord.setCustomerId(firstLevelReferralId);
+        firstLevelRecord.setReferrerId(originalCustomerId);
+        firstLevelRecord.setDateReferred(ZonedDateTime.now());
+
+        List<ReferralRecord> userWithoutReference = new ArrayList<>();
+        userWithoutReference.add(record);
+        List<ReferralRecord> directReferrals = new ArrayList<>();
+        directReferrals.add(firstLevelRecord);
+
+        when(referralDao.findUsersWithoutReferrerId()).thenReturn(userWithoutReference);
+        when(referralDao.findByReferrerId(originalCustomerId)).thenReturn(directReferrals);
+
+        //WHEN
+        List<LeaderboardEntry> leaderboard = referralService.getReferralLeaderboard();
+
+        //THEN
+        assertEquals(leaderboard.size(), 1);
+        LeaderboardEntry entry = leaderboard.get(0);
+        assertEquals(entry.getCustomerId(), originalCustomerId);
+        assertEquals(entry.getNumReferrals(), 1);
+    }
 
 }
