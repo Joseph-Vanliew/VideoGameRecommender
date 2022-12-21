@@ -73,7 +73,7 @@ public class CustomerService {
      * @return A CustomerResponse describing the customer
      */
     public CustomerResponse addNewCustomer(CreateCustomerRequest createCustomerRequest) {
-        CustomerRecord customerRecord = (toCustomerRecord(createCustomerRequest));
+        CustomerRecord customerRecord = toCustomerRecord(createCustomerRequest);
 
         if(customerRecord.getReferrerId() != null && !customerRecord.getReferrerId().equals("") && !customerRepository.existsById(customerRecord.getReferrerId())){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "referralID was not found");
@@ -111,7 +111,7 @@ public class CustomerService {
      * @param customerId
      */
     public void deleteCustomer(String customerId) {
-        customerRepository.deleteById(customerId); //TODO write test for this!
+        customerRepository.deleteById(customerId);
     }
 
     /**
@@ -140,11 +140,6 @@ public class CustomerService {
         if (!customerRepository.existsById(customerId)) {
             throw new IllegalArgumentException("Customer does not exist");
         }
-        //TODO write unit test!
-//        List<Referral> referrals = referralServiceClient.getDirectReferrals(customerId);
-//        return referrals.stream()
-//                .map(this::toCustomerResponseFromReferral)
-//                .collect(Collectors.toList());
         return Optional.ofNullable(referralServiceClient.getDirectReferrals(customerId))
                 .orElse(Collections.emptyList())
                 .stream()

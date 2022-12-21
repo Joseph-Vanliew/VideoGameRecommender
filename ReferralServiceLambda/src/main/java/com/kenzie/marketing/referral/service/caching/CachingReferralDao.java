@@ -39,7 +39,8 @@ public class CachingReferralDao implements ReferralDao {
     @Override
     public List<ReferralRecord> findByReferrerId(String referrerId) {
         List<ReferralRecord> referralRecordList = new ArrayList<>();
-        cacheClient.getValue(String.format(REFERRAL_KEY, referrerId)).ifPresentOrElse(string -> referralRecordList.addAll(fromJson(string)),
+        cacheClient.getValue(String.format(REFERRAL_KEY, referrerId))
+                .ifPresentOrElse(string -> referralRecordList.addAll(fromJson(string)),
                 () -> referralRecordList.addAll(addToCache(referralDao.findByReferrerId(referrerId), referrerId)));
         return referralRecordList;
     }
