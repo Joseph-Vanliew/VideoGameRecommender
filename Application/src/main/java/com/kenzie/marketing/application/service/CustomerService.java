@@ -75,7 +75,7 @@ public class CustomerService {
     public CustomerResponse addNewCustomer(CreateCustomerRequest createCustomerRequest) {
         CustomerRecord customerRecord = toCustomerRecord(createCustomerRequest);
 
-        if(customerRecord.getReferrerId() != null && !customerRecord.getReferrerId().equals("") && !customerRepository.existsById(customerRecord.getReferrerId())){
+        if (customerRecord.getReferrerId() != null && !customerRecord.getReferrerId().equals("") && !customerRepository.existsById(customerRecord.getReferrerId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "referralID was not found");
         }
 
@@ -196,10 +196,7 @@ public class CustomerService {
     }
     private CustomerResponse toCustomerResponseFromReferral (Referral referral){
         Optional<CustomerRecord> record = customerRepository.findById(referral.getCustomerId());
-        if(record.isPresent()) {
-            return toCustomerResponseFromRecord(record.get());
-        }
-        return null;
+        return record.map(this::toCustomerResponseFromRecord).orElse(null);
     }
     private LeaderboardUiEntry toLeaderboardUI(LeaderboardEntry entry) {
         LeaderboardUiEntry leaderboardUiEntry = new LeaderboardUiEntry();

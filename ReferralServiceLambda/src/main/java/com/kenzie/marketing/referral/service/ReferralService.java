@@ -7,7 +7,6 @@ import com.kenzie.marketing.referral.model.ReferralRequest;
 import com.kenzie.marketing.referral.model.ReferralResponse;
 import com.kenzie.marketing.referral.service.comparator.ReferralComparator;
 import com.kenzie.marketing.referral.service.converter.ReferralConverter;
-import com.kenzie.marketing.referral.service.converter.ZonedDateTimeConverter;
 import com.kenzie.marketing.referral.service.dao.ReferralDao;
 import com.kenzie.marketing.referral.service.exceptions.InvalidDataException;
 import com.kenzie.marketing.referral.service.model.ReferralRecord;
@@ -15,15 +14,14 @@ import com.kenzie.marketing.referral.service.task.ReferralTask;
 
 import javax.inject.Inject;
 
-import java.sql.Ref;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class ReferralService {
 
-    private ReferralDao referralDao;
-    private ExecutorService executor;
+    private final ReferralDao referralDao;
+    private final ExecutorService executor;
 
     @Inject
     public ReferralService(ReferralDao referralDao) {
