@@ -1,7 +1,3 @@
-# ATA-Unit-Five-Project-Solution
-
-Follow the instructions on lms.kenzie.academy
-
 ### To create the Referral table in DynamoDB:
 
 You must do this for the ReferralServiceLambda to work!
@@ -31,7 +27,3 @@ First, run
 Run `deployDev.sh`.  This might take 20 minutes...
 
 To teardown the deployment, run `./cleanupDev.sh`.
-
-Do not leave your development deployment running for long periods of time when you are not using it!  That will quickly eat up your AWS budget.
-
-Stop your session on Vocareum to pause the dev deployment without having to tear it down. 
